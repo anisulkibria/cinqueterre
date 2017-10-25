@@ -3,4 +3,5 @@
 	function my_theme_enqueue_styles() {
 		wp_enqueue_style( 'listingpr-parent-style', get_template_directory_uri() . '/style.css' );
 	}
+	require_once get_stylesheet_directory() . '/include/theme-custom-function.php';
 ?>

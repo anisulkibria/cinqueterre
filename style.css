@@ -1,5 +1,5 @@
 /*
- Theme Name:   Listingpro Child Old
+ Theme Name:   Listingpro Child
  Theme URI:    http://studio.cridio.com/listingpro/
  Description:  Listingpro Child Theme
  Author:       cridio team
@@ -16,3 +16,7 @@
 .img-curtasy > p > span a {
 	color: #fa0000;
 }
+#singlepostmap,#singlepostmap_custom{
+ 	height:180px;
+ 	overflow: hidden;
+ }
