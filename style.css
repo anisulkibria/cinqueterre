@@ -20,3 +20,47 @@
  	height:180px;
  	overflow: hidden;
  }
+div.loading-main-div{text-align: center;}
+button.jk-load-more-btn {
+    background-color: #0081bf;
+	padding-left: 44px;	
+	font-size: 15px;
+    font-weight: 600;
+    width: auto;
+    height: 42px;
+    line-height: 42px;    
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    margin: 0 0 4px;    
+    display: inline-block;
+    position: relative;
+    -webkit-transition: padding 0.25s ease-in-out, width 0.25s ease-in-out;
+    transition: padding 0.25s ease-in-out, width 0.25s ease-in-out;
+    text-align: center;
+    text-decoration: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+}
+button.jk-load-more-btn.loading:before {
+    background: #fff url(assets/images/ajax-loader.gif) no-repeat center center;
+    width: 30px;
+    height: 30px;
+    margin: 6px;
+    border-radius: 2px;
+    display: inline-block;
+    z-index: 0;
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    -webkit-transition: width 0.5s ease-in-out;
+    transition: width 0.5s ease-in-out;
+}

@@ -46,7 +46,7 @@
 							elseif($time > $open && $time < $close){
 								echo '<a class="Opened">'.esc_html__('Open Now~','listingpro').'</a>';
 							}else{
-								echo '<a class="closed">'.esc_html__('Closed Now!','listingpro').'</a>';
+								//echo '<a class="closed">'.esc_html__('Closed Now!','listingpro').'</a>';
 							}			
 							if( !empty($opencheck) && !empty($closecheck) ){
 								echo '<span>'.$newTimeOpen.' - '.$newTimeClose.'</span></li>';
@@ -83,7 +83,8 @@
 							$newTimeOpen = date('h:i A', $open);
 							$newTimeClose = date('h:i A', $close);
 						}
-						echo '<li><strong style="padding-left: 50px;">Time slot '.$num.'</strong>';
+						//echo '<li><strong style="padding-left: 50px;">Time slot '.$num.'</strong>';
+						echo '<li><strong style="padding-left: 50px;">&nbsp;</strong>';
 						if(!empty($opencheck)&& !empty($closecheck)){
 							echo '<span>'.$newTimeOpen.' - '.$newTimeClose.'</span></li>';
 						}

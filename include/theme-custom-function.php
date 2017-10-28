@@ -5,8 +5,264 @@ add_action( 'admin_enqueue_scripts', 'theme_enqueue_admin_js' );
     }
 function themeslug_enqueue_script() {
 	wp_enqueue_script( 'script', get_stylesheet_directory_uri() . '/js/theme-script.js', array ( 'jquery' ), 1.1, true);
+	wp_enqueue_script('load-ajax-script');
+	wp_localize_script('load-ajax-script', 'ajax_load_term_object', array(
+		'ajaxurl' => admin_url('admin-ajax.php')
+	));
 }
 add_action( 'wp_enqueue_scripts', 'themeslug_enqueue_script' );
+
+/* ============== ListingPro Search Filter========== */
+add_action('wp_ajax_ajax_load_tags', 'ajax_load_tags');
+add_action('wp_ajax_nopriv_ajax_load_tags', 'ajax_load_tags');
+if (!function_exists('ajax_load_tags')) {
+    function ajax_load_tags()
+    {
+        global $listingpro_options;
+		$pageno           = '';
+        if (isset($_POST['pageno'])) {
+            $pageno = $_POST['pageno'];
+        }
+		$squery = '';
+		if(isset($_POST['skeywork'])){
+			$squery               = sanitize_text_field($_POST['skeywork']);
+		}
+		
+        $info[]                   = '';
+        $info['tag_name']         = $_POST['tag_name'];
+        $info['cat_id']           = sanitize_text_field($_POST['cat_id']);
+		
+		if( is_numeric($_POST['loc_id'] ) ){
+			$info['loc_id']    = sanitize_text_field($_POST['loc_id']);
+		}
+		else{
+			$locTerm = get_term_by('name', $_POST['loc_id'], 'location');
+			$loc_ID = $locTerm->term_id;
+			$info['loc_id']           = $loc_ID;
+		}
+        
+        $info['listStyle']        = sanitize_text_field($_POST['list_style']);
+        $info['inexpensive']      = sanitize_text_field($_POST['inexpensive']);
+        $info['moderate']         = sanitize_text_field($_POST['moderate']);
+        $info['pricey']           = sanitize_text_field($_POST['pricey']);
+        $info['ultra']            = sanitize_text_field($_POST['ultra']);
+        $info['averageRate']      = sanitize_text_field($_POST['averageRate']);
+        $info['mostRewvied']      = sanitize_text_field($_POST['mostRewvied']);
+        $info['listing_openTime'] = sanitize_text_field($_POST['listing_openTime']);
+        $tagQuery                 = '';
+        $catQuery                 = '';
+        $listing_time             = '';
+        $sFeatures                = '';
+        $sFeatures                = $_POST['tag_name'];
+        if (!empty($info['listing_openTime'])) {
+            $listing_time = $info['listing_openTime'];
+        }
+		global $paged;
+        if (!empty($pageno)) {
+            $paged = $pageno;
+        }
+        $priceQuery   = array();
+        $categoryName = '';
+        $LocationName = '';
+        $locQuery     = '';
+        $currentTax   = '';
+        if (!empty($info['tag_name'])) {
+            $tagQuery = array(
+                'taxonomy' => 'features',
+                'field' => 'id',
+                'terms' => $info['tag_name']
+            );
+        }
+        if (!empty($info['cat_id'])) {
+            $categoryName = get_term_by('id', $info['cat_id'], 'listing-category');
+            $categoryName = $categoryName->name;
+            $catQuery     = array(
+                'taxonomy' => 'listing-category',
+                'field' => 'id',
+                'terms' => $info['cat_id']
+            );
+        }
+        if (!empty($info['loc_id'])) {
+            $LocationName = get_term_by('id', $info['loc_id'], 'location');
+            $LocationName = $LocationName->name;
+            $locQuery     = array(
+                'taxonomy' => 'location',
+                'field' => 'id',
+                'terms' => $info['loc_id']
+            );
+        }
+        /* added by zaheer on 13 march */
+        $orderBy        = '';
+        $rateArray      = '';
+        $reviewedArray  = '';
+        $statusArray    = array();
+        $optenTimeArray = array();
+        $relation       = 'OR';
+        if (!empty($info['averageRate'])) {
+            $orderBy   = 'meta_value_num';
+            $rateArray = array(
+                'key' => $info['averageRate'],
+                'compare' => 'EXIST'
+            );
+        }
+        if (!empty($info['mostRewvied'])) {
+            $orderBy       = 'meta_value_num';
+            $reviewedArray = array(
+                'key' => $info['mostRewvied'],
+                'compare' => 'EXIST'
+            );
+        }
+        if (!empty($info['inexpensive'])) {
+            $inexArray = array(
+                'key' => 'lp_listingpro_options',
+                'value' => 'inexpensive',
+                'compare' => 'LIKE'
+            );
+        }
+        if (!empty($info['moderate'])) {
+            $moderArray = array(
+                'key' => 'lp_listingpro_options',
+                'value' => 'moderate',
+                'compare' => 'LIKE'
+            );
+        }
+        if (!empty($info['pricey'])) {
+            $pricyArray = array(
+                'key' => 'lp_listingpro_options',
+                'value' => 'pricey',
+                'compare' => 'LIKE'
+            );
+        }
+        if (!empty($info['ultra'])) {
+            $ultrArray = array(
+                'key' => 'lp_listingpro_options',
+                'value' => 'ultra_high_end',
+                'compare' => 'LIKE'
+            );
+        }
+        if (!empty($info['inexpensive']) || !empty($info['moderate']) || !empty($info['pricey']) || !empty($info['ultra'])) {
+            $statusArray = array(
+                'key' => 'lp_listingpro_options',
+                'value' => 'price_status',
+                'compare' => 'LIKE'
+            );
+            $relation    = "AND";
+        }
+        if (!empty($info['inexpensive']) || !empty($info['moderate']) || !empty($info['pricey']) || !empty($info['ultra']) || !empty($info['averageRate']) || !empty($info['mostRewvied'])) {
+            $priceQuery = array(
+                'relation' => $relation, // Optional, defaults to "AND"
+                $statusArray,
+                array(
+                    'relation' => 'OR',
+                    $inexArray,
+                    $moderArray,
+                    $pricyArray,
+                    $ultrArray
+                ),
+                array(
+                    'relation' => 'OR',
+                    $rateArray,
+                    $reviewedArray
+                )
+            );
+        }
+		
+		$listingperpage = '';
+		if(isset($listingpro_options['listing_per_page']) && !empty($listingpro_options['listing_per_page'])){
+			$listingperpage = $listingpro_options['listing_per_page'];
+		}
+		else{
+			$listingperpage = 10;
+		}
+        /* added by zaheer on 13 march */
+        $searchQuery = '';
+        $TxQuery     = array(
+            $tagQuery,
+            $catQuery,
+            $locQuery
+        );
+        if (empty($TxQuery)) {
+            $TxQuery = array();
+        }
+        $ad_campaignsIDS = listingpro_get_campaigns_listing('lp_top_in_search_page_ads', TRUE, $TxQuery, $searchQuery, $priceQuery, null, null, null);
+        $type            = 'listing';
+        $args            = array(
+            'post_type' => $type,
+            'post_status' => 'publish',
+            'posts_per_page' => $listingperpage,
+            'paged' => $paged,
+            's' => $squery,
+            'post__not_in' => $ad_campaignsIDS,
+            'orderby' => $orderBy,
+            /* 'meta_key'  => $metaKey, */
+            'meta_query' => $priceQuery,
+            'tax_query' => array(
+                $tagQuery,
+                $catQuery,
+                $locQuery
+            )
+        );
+        $my_query        = null;
+        $output          = null;
+        $result          = null;
+        $found           = null;
+        $my_query        = new WP_Query($args);
+        $found           = $my_query->found_posts;
+        //$output .= '<div class="promoted-listings">';
+        ob_start();
+        $output .= listingpro_get_campaigns_listing('lp_top_in_search_page_ads', false, $TxQuery, $searchQuery, $priceQuery, $s=null, $noOFListing=null, $ad_campaignsIDS);
+        $output .= ob_get_contents();
+        ob_end_clean();
+		ob_flush();
+        //$output .= '</div>';
+        if ($my_query->have_posts()) {
+            while ($my_query->have_posts()):
+                $my_query->the_post();
+                if ($listing_time == 'open') {
+                    $openStatus = listingpro_check_time(get_the_ID(), true);
+                    if ($openStatus == 'open') {
+                        ob_start();
+                        get_template_part('listing-loop');
+                        $htmlOutput .= ob_get_contents();
+                        ob_end_clean();
+						ob_flush();
+                    }
+                } else {
+                    ob_start();
+                    get_template_part('listing-loop');
+                    $htmlOutput .= ob_get_contents();
+                    ob_end_clean();
+					ob_flush();
+                }
+            endwhile;
+            wp_reset_query();
+            if (empty($htmlOutput)) {
+                $output .= '';
+            } else {
+                $output .= $htmlOutput;
+            }
+        } elseif (empty($ad_campaignsIDS)) {
+            $output .= '';
+        }
+        if (($found > 1)) {
+            $foundtext = 'Results';
+        } else {
+            $foundtext = 'Result';
+        }
+		//$output .= listingpro_load_more_filter($my_query, $pageno, $squery);
+        $output            = utf8_encode($output);
+        $term_group_result = json_encode(array(
+            "foundtext" => $foundtext,
+            "found" => $found,
+            "tags" => $info['tag_name'],
+            "cat" => $categoryName,
+            "city" => $LocationName,
+            "html" => $output,
+            "opentime" => $listing_time
+        ));
+        die($term_group_result);
+    }
+}
 	
 add_action( 'admin_init', 'process_post' );
 function process_post() {
